@@ -67,9 +67,11 @@ func (db *Database) GetPosts(N int) ([]models.Manufacturer, error) {
 }
 
 func (db *Database) Update(id []int64) error {
-	_, err := db.DB.Exec("UPDATE manufacturer SET details = jsonb_set(details, '{needUpdate}', '\"true\"') WHERE id in(?);", pq.Int64Array(id))
+
+	_, err := db.DB.Exec("UPDATE manufacturer SET details = jsonb_set(details, '{needUpdate}', '\"false\"') WHERE id = any($1);", pq.Array(id))
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
