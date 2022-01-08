@@ -1,0 +1,28 @@
+version: "3.7"
+services:
+  database:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=1337
+      - POSTGRES_DB=forum
+      - POSTGRES_USER=skullkon
+    ports:
+      - "5432:5432"
+    volumes:
+      - $HOME/docker/volumes/postgres:/var/lib/postgresql/data
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PORT=8080
+      - DSN=postgres://skullkon:1337@localhost:5432/forum?sslmode=disable
+    depends_on:
+      - database
+    networks:
+      - default
+    ports:
+      - "8080:8080"
+volumes:
+  data:
