@@ -8,12 +8,8 @@ import (
 	"github.com/skullkon/go-manufacturer/internal/models"
 )
 
-type response struct {
-	Answer bool `json:"answer"`
-}
-
 func Handler(w http.ResponseWriter, r *http.Request) {
-	var res response
+	var res models.Response
 	var batch []models.Manufacturer
 	err := json.NewDecoder(r.Body).Decode(&batch)
 	if err != nil {
@@ -21,7 +17,23 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		logrus.Error("DB error :" + err.Error())
 		return
 	}
+	if len(batch) == 0 {
+		res.Answer = false
+		resp, _ := json.Marshal(res)
+		w.WriteHeader(200)
+		_, err = w.Write(resp)
+		if err != nil {
+			logrus.Error("Answer Marshall error in handler" + err.Error())
+			return
+		}
+		return
+	}
 	res.Answer = true
 	resp, _ := json.Marshal(res)
-	w.Write(resp)
+	w.WriteHeader(200)
+	_, err = w.Write(resp)
+	if err != nil {
+		logrus.Error("Answer Marshall error in handler" + err.Error())
+		return
+	}
 }
