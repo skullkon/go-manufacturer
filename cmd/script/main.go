@@ -5,23 +5,25 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/skullkon/go-manufacturer/internal/models"
-	"net/http"
-	"os"
-	"strconv"
-
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"github.com/skullkon/go-manufacturer/internal/db"
+	"github.com/skullkon/go-manufacturer/internal/models"
+	"github.com/tcnksm/go-httpstat"
+	"net/http"
+	"os"
+	"strconv"
 )
 
 //
 
 func Send(N int, db *db.Database) (int, error) {
 	var ans models.Response
-	client := &http.Client{}
+	client := http.DefaultClient
 	var body bytes.Buffer
 	var arr []int64
+
+	var result httpstat.Result
 
 	res, err := db.GetPosts(N)
 	if err != nil {
@@ -45,12 +47,15 @@ func Send(N int, db *db.Database) (int, error) {
 		logrus.Error("Request building error: " + err.Error())
 		return 0, err
 	}
-
+	ctx := httpstat.WithHTTPStat(req.Context(), &result)
+	ctx = httpstat.WithHTTPStat(req.Context(), &result)
+	req = req.WithContext(ctx)
 	resp, err := client.Do(req)
 	if err != nil {
 		logrus.Error("Client sending request error: " + err.Error())
 		return 0, err
 	}
+	defer resp.Body.Close()
 
 	err = json.NewDecoder(resp.Body).Decode(&ans)
 	if err != nil {
