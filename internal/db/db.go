@@ -24,6 +24,7 @@ func NewDB(dsn string) (*Database, error) {
 }
 
 func (db *Database) GetPosts(N int) ([]models.Manufacturer, error) {
+
 	var manyPosts []models.Manufacturer
 	i := 0
 
@@ -46,18 +47,20 @@ func (db *Database) GetPosts(N int) ([]models.Manufacturer, error) {
 		var post models.Manufacturer
 		var b types.JSONText
 
-		err := result.Scan(&post.Id, &b)
-		if err != nil {
+		if err := result.Scan(&post.Id, &b); err != nil {
 			return nil, err
 		}
-		err = b.Unmarshal(&locData)
-		if err != nil {
+
+		if err := b.Unmarshal(&locData); err != nil {
 			return nil, err
+
 		}
+
 		booledStr, err := strconv.ParseBool(locData.NeedUpdate)
 		if err != nil {
 			return nil, err
 		}
+
 		locDetailed.NeedUpdate = booledStr
 		manyPosts = append(manyPosts, post)
 

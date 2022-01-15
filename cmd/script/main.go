@@ -9,7 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/skullkon/go-manufacturer/internal/db"
 	"github.com/skullkon/go-manufacturer/internal/models"
-	"github.com/tcnksm/go-httpstat"
 	"net/http"
 	"os"
 	"strconv"
@@ -23,16 +22,13 @@ func Send(N int, db *db.Database) (int, error) {
 	var body bytes.Buffer
 	var arr []int64
 
-	var result httpstat.Result
-
 	res, err := db.GetPosts(N)
 	if err != nil {
 		logrus.Error("Error on db GetPosts Method: " + err.Error())
 		return 0, err
 	}
 
-	err = json.NewEncoder(&body).Encode(res)
-	if err != nil {
+	if err := json.NewEncoder(&body).Encode(res); err != nil {
 		logrus.Error("DB request res encoding error: " + err.Error())
 		return 0, err
 	}
@@ -47,9 +43,7 @@ func Send(N int, db *db.Database) (int, error) {
 		logrus.Error("Request building error: " + err.Error())
 		return 0, err
 	}
-	ctx := httpstat.WithHTTPStat(req.Context(), &result)
-	ctx = httpstat.WithHTTPStat(req.Context(), &result)
-	req = req.WithContext(ctx)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		logrus.Error("Client sending request error: " + err.Error())
@@ -57,8 +51,7 @@ func Send(N int, db *db.Database) (int, error) {
 	}
 	defer resp.Body.Close()
 
-	err = json.NewDecoder(resp.Body).Decode(&ans)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&ans); err != nil {
 		logrus.Error("API resp encoding error: " + err.Error())
 		return 0, err
 	}
@@ -67,19 +60,14 @@ func Send(N int, db *db.Database) (int, error) {
 		arr = append(arr, value.Id)
 	}
 
-	logrus.Info(arr)
-	if ans.Answer == true {
-		logrus.Info(res)
-		err = db.Update(arr)
-		if err != nil {
-			logrus.Info("DB update error: " + err.Error())
-			return 0, nil
-		}
-	} else {
+	if ans.Answer == false {
 		logrus.Info("API did not confirm")
 		return 0, nil
 	}
-
+	if err := db.Update(arr); err != nil {
+		logrus.Info("DB update error: " + err.Error())
+		return 0, nil
+	}
 	return len(arr), nil
 }
 
